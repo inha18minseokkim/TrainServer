@@ -2,3 +2,5 @@ pandas
 finance-datareader
 pymongo
 loguru
+bs4
+fastapi

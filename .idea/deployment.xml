@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="ubuntu@54.219.85.46:22 (2)" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="ubuntu@13.52.250.114:22 key">
         <serverdata>
@@ -23,6 +23,20 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="ubuntu@54.219.85.46:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/pycharm_project_186" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="ubuntu@54.219.85.46:22 (2)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/pycharm_project_392" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="ubuntu@haniumproject.com:22 key">
         <serverdata>
           <mappings>
@@ -31,5 +45,6 @@
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
