@@ -6,13 +6,11 @@ import torch
 import pandas as pd
 from loguru import logger
 import FinanceDataReader as fdr
+from torch.utils.data import TensorDataset # 텐서데이터셋
+from torch.utils.data import DataLoader # 데이터로더
 
 import Declaration
 import PriceLoader
-from torch.utils.data import TensorDataset # 텐서데이터셋
-from torch.utils.data import DataLoader # 데이터로더
-import torch.nn.functional as F
-
 import Trainer
 
 CURPATH = Declaration.ModelPATH + '/DefaultModel.pth'
@@ -58,9 +56,12 @@ class DefaultPredict(Trainer.Trainer):
             if load == True: #모델을 로드하는거면 로딩
                 self.load()
                 self.model.eval()
-        except FileNotFoundError: #처음 시작하는거면 파일이 없을 수도 있음.
-            pass
-        #self.dataloader = self.data_prepro()
+        except : #처음 시작하는거면 파일이 없을 수도 있음.
+            logger.debug("파일이 잘못되어서 다시 만들어야 함")
+            self.dataloader = self.data_prepro()
+            self.train()
+
+
 
     def data_prepro(self, traincode: list = []): #raw data를 batchsize에 맞게 변경
         self.pricelist: list = asyncio.run(self.priceloader.getPriceList(traincode))
@@ -130,9 +131,9 @@ class DefaultPredict(Trainer.Trainer):
             torch.save(self.model,CURPATH)
         except:
             os.mkdir('./Model')
-            torch.save(self.model,CURPATH,map_loaction=torch.device('cuda:0'))
+            torch.save(self.model,CURPATH)
     def load(self):
-        self.model = torch.load(CURPATH,map_loaction=torch.device('cuda:0'))
+        self.model = torch.load(CURPATH)
 
     def test_dataload(self, code: str) -> torch.utils.data.TensorDataset:
         #financeDataReader에서 학습할 주식종목에 대한 데이터 로드해서 가져옴

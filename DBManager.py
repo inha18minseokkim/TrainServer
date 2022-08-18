@@ -1,6 +1,9 @@
 import pymongo
 from loguru import logger
 from ast import literal_eval
+
+import Declaration
+
 KAKAOID = 'kakaoid'
 SESSIONID = 'sessionid'
 UUID = 'uuid'
@@ -59,6 +62,10 @@ class ServerDBManager:
         res['code'] = 1
         logger.debug('kakaoid에 대한 주가 비율 정보를 요청함', res)
         return res
+    def getUserStockList(self, kakaoid: str) -> list:
+        tmp = self.getStockRatio(kakaoid)
+        del tmp['code']
+        return [k for k in tmp.keys()]
 
     def getScheduler(self): #Scheduler의 정보 가져옴
         cursor = self.serverdb.scheduler.find()
@@ -72,6 +79,18 @@ class ServerDBManager:
     def getSchedulerIdx(self):
         cursor = self.serverdb.scheduleridx.find({'idx' : 'idx'})
         return list(cursor)[0]['value']
+
+    def getStockModel(self,code: str):
+        try:
+            cursor = self.serverdb.stockmodel.find({'code' : code})
+            res = list(cursor)
+            return res[0]['modelname']
+        except: #db안에 아직 모델에 대한 정보가 없으면 db에 default로 넣어
+            self.serverdb.stockmodel.insert_one({'code':code,'modelname':Declaration.DefaultModel})
+            return Declaration.DefaultModel
+
+
+
     def getModelInfo(self):
         cursor: list[(str,float,float,str)] = list(self.serverdb.modelinfo.find())
         return cursor
