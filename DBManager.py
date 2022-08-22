@@ -19,6 +19,7 @@ ACNT = 'acnt_prdt_cd'
 STKLST = 'stocklist'
 PERIOD = 'period'
 FAVLST = 'favlist'
+STRATEGY = 'strategy'
 class ServerDBManager:
     def __init__(self):
         self.client = pymongo.MongoClient(  # 실제 배포에서는 아래거 써야됨.
@@ -62,6 +63,19 @@ class ServerDBManager:
         res['code'] = 1
         logger.debug('kakaoid에 대한 주가 비율 정보를 요청함', res)
         return res
+
+    def getStrategy(self, kakaoid: str):
+        cursor = self.getUserInfoFromServer(kakaoid)
+        try:
+            res = cursor[STRATEGY]
+            return res
+        except:#만약 해당 유저 entity가 strategy를 갖고 있지 않는 경우 기본 BruteForceStrategy로 설정하고 리턴
+            idquery = {KAKAOID: kakaoid}
+            value = {'$set': {STRATEGY : 'BruteForceStrategy'}}
+            self.serverdb.user.update_one(idquery, value)
+            return 'BruteForceStrategy'
+
+
     def getUserStockList(self, kakaoid: str) -> list:
         tmp = self.getStockRatio(kakaoid)
         del tmp['code']

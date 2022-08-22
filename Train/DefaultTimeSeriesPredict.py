@@ -11,9 +11,10 @@ from torch.utils.data import DataLoader # 데이터로더
 
 import Declaration
 import PriceLoader
-import Trainer
+import Train.Trainer
 
 CURPATH = Declaration.ModelPATH + '/DefaultModel.pth'
+dev = 'cpu'
 class fund_GRU(nn.Module):
     def __init__(self, input_size, hidden_size):
         super(fund_GRU, self).__init__()
@@ -42,12 +43,12 @@ class fund_GRU(nn.Module):
         return logits
 
     def init_hidden(self, curr_batch):
-        self.daily_hidden = torch.zeros(1, curr_batch, self.hidden_size).to('cuda:0')
-        self.weekly_hidden = torch.zeros(1, curr_batch, self.hidden_size).to('cuda:0')
-        self.monthly_hidden = torch.zeros(1, curr_batch, self.hidden_size).to('cuda:0')
+        self.daily_hidden = torch.zeros(1, curr_batch, self.hidden_size).to(dev)
+        self.weekly_hidden = torch.zeros(1, curr_batch, self.hidden_size).to(dev)
+        self.monthly_hidden = torch.zeros(1, curr_batch, self.hidden_size).to(dev)
 
 
-class DefaultPredict(Trainer.Trainer):
+class DefaultPredict(Train.Trainer.Trainer):
     def __init__(self,batch_size: int, load: bool = False):
         self.priceloader: PriceLoader.StkPrice = PriceLoader.StkPrice()
         self.batch_size = batch_size
@@ -55,6 +56,7 @@ class DefaultPredict(Trainer.Trainer):
         try:
             if load == True: #모델을 로드하는거면 로딩
                 self.load()
+                logger.debug("로딩 성공")
                 self.model.eval()
         except : #처음 시작하는거면 파일이 없을 수도 있음.
             logger.debug("파일이 잘못되어서 다시 만들어야 함")
@@ -96,7 +98,7 @@ class DefaultPredict(Trainer.Trainer):
 
     def train(self):
         self.model.train() #트레인모드로
-        self.model.to('cuda:0') #gpu 사용
+        self.model.to(dev) #gpu 사용
         dataloader = self.data_prepro(['005930','213500','091160'])
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-5)
         epochs = 10
@@ -108,13 +110,13 @@ class DefaultPredict(Trainer.Trainer):
                 #logger.debug(idx)
                 # input data의 차원이 (256,15)라서 이걸 (256,15,1)로 바꿔주는 unsqueeze(2)
                 # to('cuda:0') -> cpu에 있던 텐서를 gpu로 옮김
-                daily_input = daily_input.to('cuda:0').unsqueeze(2)
-                weekly_input = weekly_input.to('cuda:0').unsqueeze(2)
-                monthly_input = monthly_input.to('cuda:0').unsqueeze(2)
+                daily_input = daily_input.to(dev).unsqueeze(2)
+                weekly_input = weekly_input.to(dev).unsqueeze(2)
+                monthly_input = monthly_input.to(dev).unsqueeze(2)
                 # epoch마다 batch size가 달라질 수 있기 때문에(특히 마지막) 항상 초기화해줘야됨
                 self.model.init_hidden(daily_input.shape[0])
                 optimizer.zero_grad()
-                label = label.to('cuda:0')
+                label = label.to(dev)
                 # print(daily_input.unsqueeze(2).shape)
                 tmp = self.model(daily_input, weekly_input, monthly_input)
                 loss = lossfunc(tmp, label)
@@ -130,7 +132,7 @@ class DefaultPredict(Trainer.Trainer):
         try:
             torch.save(self.model,CURPATH)
         except:
-            os.mkdir('./Model')
+            os.mkdir('../Model')
             torch.save(self.model,CURPATH)
     def load(self):
         self.model = torch.load(CURPATH)
@@ -158,24 +160,24 @@ class DefaultPredict(Trainer.Trainer):
             testmonthly.append(samsungtest.iloc[i:i + 15].loc[:, 'monthly'])
             testlabel.append(samsungtest.iloc[i:i + 15].loc[:, 'label'])
 
-        testdaily = torch.FloatTensor(testdaily).to('cuda:0')
-        testweekly = torch.FloatTensor(testweekly).to('cuda:0')
-        testmonthly = torch.FloatTensor(testmonthly).to('cuda:0')
-        testlabel = torch.FloatTensor(testlabel).to('cuda:0')
+        testdaily = torch.FloatTensor(testdaily).to(dev)
+        testweekly = torch.FloatTensor(testweekly).to(dev)
+        testmonthly = torch.FloatTensor(testmonthly).to(dev)
+        testlabel = torch.FloatTensor(testlabel).to(dev)
         dataset = torch.utils.data.TensorDataset(testdaily, testweekly, testmonthly, testlabel)
         return dataset
 
     def pred(self,code: str): #한 가지 종목에 대해 예측, 평균과 표준편차 넘겨줌
-        self.model.to(torch.device('cuda:0'))
+        self.model.to(torch.device(dev))
         self.model.eval() #backpropagation 없이 평가만
         testset = self.test_dataload(code)
         res = []
         with torch.no_grad():
             for daily_input, weekly_input, monthly_input, label in testset:
-                daily_input = daily_input.to('cuda:0').unsqueeze(0).unsqueeze(2)
-                weekly_input = weekly_input.to('cuda:0').unsqueeze(0).unsqueeze(2)
-                monthly_input = monthly_input.to('cuda:0').unsqueeze(0).unsqueeze(2)
-                label = label.to('cuda:0')
+                daily_input = daily_input.to(dev).unsqueeze(0).unsqueeze(2)
+                weekly_input = weekly_input.to(dev).unsqueeze(0).unsqueeze(2)
+                monthly_input = monthly_input.to(dev).unsqueeze(0).unsqueeze(2)
+                label = label.to(dev)
                 # testset은 batchsize가 1이기 때문에 hidden state 초기화 안해주면 차원이 안맞음
                 self.model.init_hidden(daily_input.shape[0])
                 # print(daily_input.shape)
@@ -189,4 +191,5 @@ class DefaultPredict(Trainer.Trainer):
 if __name__ == '__main__':
     pred: DefaultPredict = DefaultPredict(512)
     print(pred.pred('005930'))
+    print(pred.pred('091170'))
     #pred.train()

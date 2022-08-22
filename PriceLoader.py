@@ -29,8 +29,20 @@ class StkPrice:
             tmpreturn = np.array(tmpreturn)
             li.append([np.mean(tmpreturn),np.std(tmpreturn)])
         return li
-
+    def getKoreaBondRtn(self):
+        res = fdr.DataReader('KR1YT=RR').iloc[-1]
+        return res['Close'] / 100
+    def getCov(self,code: list):
+        pricedata: list = asyncio.run(self.getPriceList(code))
+        df = pandas.DataFrame(pricedata).T
+        df.columns = code
+        monthly_rtn: pandas.DataFrame = (df - df.shift(25))/df.shift(25)
+        monthly_rtn.dropna(inplace=True)
+        rtn_cov = monthly_rtn.cov()
+        return rtn_cov
 if __name__ == "__main__":
     loader: StkPrice = StkPrice()
-    res = asyncio.run(loader.getMeanStdList(['005930','091160','091170']))
+    #res = asyncio.run(loader.getMeanStdList(['005930','091160','091170']))
+    #res = loader.getCov(['005930','091160','091170'])
+    res = loader.getKoreaBondRtn()
     print(res)
