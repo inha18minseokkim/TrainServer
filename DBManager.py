@@ -63,6 +63,10 @@ class ServerDBManager:
         res['code'] = 1
         logger.debug('kakaoid에 대한 주가 비율 정보를 요청함', res)
         return res
+    def setStrategy(self, kakaoid: str, strategy: str):
+        idquery = {KAKAOID : kakaoid}
+        value = {'$set' : {STRATEGY : strategy}}
+        self.serverdb.user.update_one(idquery,value)
 
     def getStrategy(self, kakaoid: str):
         cursor = self.getUserInfoFromServer(kakaoid)
@@ -74,7 +78,10 @@ class ServerDBManager:
             value = {'$set': {STRATEGY : 'BruteForceStrategy'}}
             self.serverdb.user.update_one(idquery, value)
             return 'BruteForceStrategy'
-
+    def setQuantity(self,kakaoid: str, quantity: int):
+        idquery = {KAKAOID: kakaoid}
+        value = {'$set': {QUANTITY: quantity}}
+        self.serverdb.user.update_one(idquery, value)
 
     def getUserStockList(self, kakaoid: str) -> list:
         tmp = self.getStockRatio(kakaoid)

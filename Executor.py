@@ -1,12 +1,26 @@
+from dependency_injector import containers, providers
 from loguru import logger
 
-import Container
+
 import DBManager
 import Declaration
 from Strategies.BruteForceStrategy import BruteForceStrategy
+from Strategies.OptimizerStrategy import OptimizerStrategy
 from Strategies import Strategy
-from Train import Trainer
+from Train import Trainer, DefaultTimeSeriesPredict
 
+
+class TrainContainer(containers.DeclarativeContainer):
+    def __new__(cls):
+        if not hasattr(cls,'instance'):
+            logger.debug("Container 싱글톤 객체 만듬")
+            cls.instance = super(TrainContainer,cls).__new__(cls)
+        else:
+            logger.debug('객체 만들어져있어서 주솟값만 리턴함')
+        return cls.instance
+
+    defaultPredict : DefaultTimeSeriesPredict.DefaultPredict \
+        = providers.Singleton(DefaultTimeSeriesPredict.DefaultPredict, batch_size=512, load=True)
 
 class Executor:
     def __init__(self, serverdb: DBManager.ServerDBManager):
@@ -15,11 +29,12 @@ class Executor:
     def decideModel(self,code: str):
         modelname = self.serverdb.getStockModel(code)
         if modelname == Declaration.DefaultModel:
-            return Container.TrainContainer.defaultPredict()
+            return TrainContainer.defaultPredict()
     def decideStrategy(self,strategyName: str, codelist: list, rtnstd: list) -> Strategy.Strategy:
         if strategyName == 'BruteForceStrategy':
             return BruteForceStrategy(codelist, rtnstd)
-
+        if strategyName == 'OptimizerStrategy':
+            return OptimizerStrategy(codelist, rtnstd)
         return None
     def execute(self,kakaoid: str):#kakaoid 유저의 주식정보를 받아서 해당 모델에 넣고 수익률 도출->도출된 수익률로 전략-> 최종 비율 db에 반영
         curUserStockList: list = self.serverdb.getUserStockList(kakaoid) #현재 유저가 고른 종목 리스트
@@ -38,4 +53,5 @@ class Executor:
         res: dict = {curUserStockList[i]: curratio[i] for i in range(len(curUserStockList))}
         logger.debug(f'{curratio}   {res}')
         self.serverdb.setStockRatio(kakaoid,res)
-
+        logger.debug(f'{kakaoid} 서버에 반영 완료')
+        return res
