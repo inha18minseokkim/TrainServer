@@ -7,5 +7,3 @@ class Strategy:
     def execute(self):
         pass
 
-
-

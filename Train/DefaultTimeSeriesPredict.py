@@ -76,7 +76,7 @@ class DefaultPredict(Train.Trainer.Trainer):
             daily = df.apply(np.log) - df.apply(np.log).shift(1)
             weekly = df.apply(np.log) - df.apply(np.log).shift(5)
             monthly = df.apply(np.log) - df.apply(np.log).shift(20)
-            print(len(daily))
+            #print(len(daily))
             label = monthly.shift(-1)
             tmp:pd.DataFrame = pd.concat([daily,weekly,monthly,label],axis=1)
             tmp.dropna(inplace=True)
@@ -105,7 +105,7 @@ class DefaultPredict(Train.Trainer.Trainer):
         lossfunc = torch.nn.MSELoss()
         for e in range(epochs + 1):
             avg_loss = []
-            print('epoch', e)
+         #   print('epoch', e)
             for idx, (daily_input, weekly_input, monthly_input, label) in enumerate(dataloader):
                 #logger.debug(idx)
                 # input data의 차원이 (256,15)라서 이걸 (256,15,1)로 바꿔주는 unsqueeze(2)
@@ -125,7 +125,7 @@ class DefaultPredict(Train.Trainer.Trainer):
                 optimizer.step()
                 # mseloss를 epoch별로 plotting하기 위해 리스트에 저장
                 avg_loss.append(loss.item())
-        print(avg_loss)
+        #print(avg_loss)
         self.save()
 
     def save(self):
@@ -182,10 +182,10 @@ class DefaultPredict(Train.Trainer.Trainer):
                 self.model.init_hidden(daily_input.shape[0])
                 # print(daily_input.shape)
                 pred = self.model(daily_input, weekly_input, monthly_input)
-                print(pred[0])
+            #    print(pred[0])
                 res.append(pred.to('cpu').squeeze().item())
         res = np.array(res).reshape(-1)
-        print(res)
+        #print(res)
         return [np.mean(res),np.std(res)]
 
 if __name__ == '__main__':

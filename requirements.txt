@@ -6,3 +6,4 @@ bs4
 fastapi
 pymongo[srv]
 dependency-injector
+nest_asyncio
