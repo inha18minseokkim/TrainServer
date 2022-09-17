@@ -2,6 +2,8 @@ import FinanceDataReader as fdr
 import asyncio
 import numpy as np
 import pandas
+import requests
+from bs4 import BeautifulSoup
 
 
 class StkPrice:
@@ -30,8 +32,24 @@ class StkPrice:
             li.append([np.mean(tmpreturn),np.std(tmpreturn)])
         return li
     def getKoreaBondRtn(self):
-        res = fdr.DataReader('KR1YT=RR').iloc[-1]
-        return res['Close'] / 100
+        # res = fdr.DataReader('KR1YT=RR')
+        # print(res)
+        # return res['Close'] / 100
+        url = "https://finance.naver.com/marketindex/interestDetail.naver?marketindexCd=IRR_GOVT03Y#"
+        response = requests.get(url)
+        if response.status_code == 200:
+            html = response.text
+            # print(html)
+            soup = BeautifulSoup(html, 'html.parser')
+            rate = list(soup.select_one(".no_down"))
+            rate = rate[1:-1]
+            res = ''
+            for i in rate:
+                res += i.get_text()
+            res = float(res)
+            return res / 100
+        else:
+            return -1
     def getCov(self,code: list):
         pricedata: list = asyncio.run(self.getPriceList(code))
         df = pandas.DataFrame(pricedata).T
